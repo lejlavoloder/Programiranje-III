@@ -1,0 +1,151 @@
+#include<iostream>
+using namespace std;
+
+template<class T1, class T2, int max>
+class FITKolekcija
+{
+	int* _trenutno;
+	T1 _elementi1[max];
+	T2* _elementi2[max];
+public:
+	//Potrebne konstruktor i destruktor funkcije
+	int *GetTrenutno() { return _trenutno; }
+	FITKolekcija() {
+		_trenutno = new int(0);
+		for (int i = 0; i < max; i++)
+		{
+			_elementi2[i] = nullptr;
+		}
+	}
+	~FITKolekcija() {
+		for (int i = 0; i < *_trenutno; i++)
+		{
+			delete _elementi2[i];
+			_elementi2[i] = nullptr;
+		}
+		delete _trenutno; _trenutno = nullptr;
+	}
+	//Kreirati konstruktor kopije za kolekciju
+	FITKolekcija(const FITKolekcija<T1, T2, max>&k1) {
+		_trenutno = new int(*k1._trenutno);
+		for (int i = 0; i < *_trenutno; i++)
+		{
+			_elementi2[i] = new T2(*k1._elementi2[i]);
+			_elementi1[i] = k1._elementi1[i];
+		}
+	}
+	//Preklopiti operator() na način da omogući dodavanje novih elemenata u kolekciju
+	//Pri tome spriječiti dodavanja duplih elemenata (odnosi se i na T1 i na T2)
+	bool operator()(T1 clan1, T2 clan2) {
+		for (int i = 0; i < *_trenutno; i++)
+		{
+			if (_elementi1[i] == clan1 &&*_elementi2[i] == clan2)
+				return false;
+		}
+		_elementi1[*_trenutno] = clan1;
+		_elementi2[*_trenutno] = new T2(clan2);
+		(*_trenutno)++;
+		return true;
+	}
+	//Preklopiti operator[] na način da vraća element tipa T1 na osnovu njegove lokacije u nizu
+	T1 operator[](int size) { return _elementi1[size]; }
+	//Preklopiti operator-= na način da uklanja elemente iz kolekcije na osnovu rednog broja proslijeđenog kao parametar
+	bool operator-=(int pozicija) {
+		if (pozicija >= *_trenutno || pozicija < 0)return false;
+		for (int i = pozicija; i < *_trenutno - 1; i++)
+		{
+			_elementi1[i] = _elementi1[i + 1];
+			delete _elementi2[i];
+			_elementi2[i] = new T2(*_elementi2[i + 1]);
+		}
+		(*_trenutno)--;
+		return true;
+	}
+
+	friend ostream&operator<< <>(ostream&cout,const FITKolekcija&);
+	//Preklopiti operator za ispis. Implementaciju raditi izvan tijela klase.
+};
+template<class T1, class T2, int max>
+ostream&operator<<(ostream&cout,const FITKolekcija<T1, T2, max>&k) {
+	for (int i = 0; i < *k._trenutno; i++)
+	{
+		cout << k._elementi1[i] << endl;
+		cout << *k._elementi2[i] << endl;
+	}
+	return cout;
+}
+class Anketa
+{
+	char* _pitanje;
+	int _trajanje; //izraženo u danima
+	//Kolekcija treba da pohrani moguće odgovore na pitanja, sa pripadajućim rednim brojem
+	FITKolekcija<char*, int, 8> _odgovori;
+public:
+	//Kreirati potrebne konstruktor i destruktor funkcije
+	Anketa(const char*Pitanje, int trajanje) {
+		_pitanje = new char[strlen(Pitanje) + 1];
+		strcpy_s(_pitanje, strlen(Pitanje) + 1, Pitanje);
+		_trajanje = trajanje;
+	}
+	Anketa() {
+		delete[]_pitanje; _pitanje = nullptr;
+	}
+	//Kreirati funkciju DodajOdgovor koja treba da doda novi odgovor za anketu.
+	//Spriječiti dodavanje istog odgovora više puta.
+	bool DodajOdgovor(const char*odg, int sati) {
+	return _odgovori((char*)odg, sati);
+	}
+	//Kreirati funkciju UkloniOdgovor koja uklanja odgovor na osnovu njegovog rednog broja.
+	bool UkloniOdgovor(int brOdg) {
+		return _odgovori -= brOdg;
+	}
+	//Preklopiti operator za ispis
+	friend ostream&operator<<(ostream &cout,const Anketa & a1) {
+		cout << a1._pitanje << endl;
+		cout << a1._trajanje << endl;
+		cout << a1._odgovori << endl;
+		return cout;
+	}
+	//Preklopiti operator++ na način da povećava trajanje ankete za jedan dan
+	//Pri tome voditi računa da se implementiraju dvije verzije ovog operatora (objekat++; ++objekat)
+	int operator++() {
+	return	_trajanje += 1;//preinkrement
+	}
+    int operator++(int) {
+		int vrijeme(_trajanje);
+		_trajanje++;//postinkrement
+		return vrijeme;
+		}
+};
+
+int main()
+{
+	FITKolekcija<float, int, 5> kolekcija;
+	kolekcija(7.81f, 15);
+	kolekcija(9.11f, 101);
+	kolekcija(322.178f, 62);
+	kolekcija(81.5f, 1);
+	kolekcija(0.122f, 33);
+	cout << kolekcija << endl;
+	kolekcija -= 2;
+	cout << "Nakon brisanja" << endl;
+	cout << kolekcija << endl;
+	cout << "Operator []";
+	cout<<kolekcija[2];
+
+	Anketa a1("Sjediste Fita", 2);
+	a1.DodajOdgovor("Mostar",2);
+	a1.DodajOdgovor("Mostar", 2);
+	a1.DodajOdgovor("Sarajevo", 2);
+	a1.DodajOdgovor("Bihac", 2);
+	cout << a1 << endl;
+	a1.UkloniOdgovor(1);
+	cout << a1 << endl;
+	cout << a1++ << endl;
+	cout << ++a1 << endl;
+	system("pause>0");
+	return 0;
+}
+
+
+

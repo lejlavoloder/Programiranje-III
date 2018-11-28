@@ -1,0 +1,221 @@
+#include <iostream>
+using namespace std;
+#pragma warning(disable:4996)
+const char * crt = "\n----------------------------------------------------\n";
+class Datum {
+	int * _dan, *_mjesec, *_godina;
+public:
+	Datum(int d, int m, int g) {
+		_dan = new int(d);
+		_mjesec = new int(m);
+		_godina = new int(g);
+	}
+	~Datum() {
+		delete _dan; _dan = nullptr;
+		delete _mjesec; _mjesec = nullptr;
+		delete _godina; _godina = nullptr;
+	}
+	Datum(const Datum & d) {
+		_dan = new int(*d._dan);
+		_mjesec = new int(*d._mjesec);
+		_godina = new int(*d._godina);
+	}
+	friend ostream & operator<<(ostream & COUT, Datum obj) {
+		COUT << *obj._dan << "/" << *obj._mjesec << "/" << *obj._godina << endl;
+		return COUT;
+	}
+	bool operator==(const Datum&d) { return (*_dan == *d._dan && *_mjesec == *d._mjesec && *_godina ==*d._godina); }
+	void operator= (Datum & m) {
+		*_dan = *m._dan;
+		*_mjesec = *m._mjesec;
+		*_godina = *m._godina;
+	}
+};
+template<class T, int velicina>
+class FITArray {
+	T _niz[velicina];
+	int _trenutno;
+	bool _dozvoliDupliciranje;
+public:
+	//OSTALE FUNKCIJE CLANICE DEFINISATI VAN TEMPLATE KLASE
+	FITArray(bool dozvoliDupliciranje = true) {
+		_dozvoliDupliciranje =
+			dozvoliDupliciranje; _trenutno = 0;
+	}
+	int GetTrenutno() { return _trenutno; }
+
+	T * GetNiz() { return _niz; }
+	friend ostream&operator<< <>(ostream&,const FITArray &f);
+	bool operator+=(T clan);
+	bool operator-=(T clan);
+	FITArray operator()(int od, int doo);
+	T operator[](int);
+};
+template<class T, int velicina>
+T  FITArray<T, velicina>::operator[](int size) { return _niz[size]; }
+template<class T, int velicina>
+ostream&operator<<(ostream&cout, const FITArray<T, velicina>&f) {
+	for (int i = 0; i < f._trenutno; i++)
+	{
+		cout << f._niz[i] << endl;
+	}
+	return cout;
+}
+template<class T, int velicina>
+bool FITArray<T, velicina>::operator+=(T clan) {
+	if (_trenutno == velicina)
+		return false;
+	if (!_dozvoliDupliciranje) {
+		for (int i = 0; i < _trenutno; i++)
+		{
+			if (_niz[i] == clan)
+				return false;
+		}
+	}
+	_niz[_trenutno] = clan;
+	_trenutno++;
+	return true;
+}
+template<class T, int velicina>
+bool FITArray<T, velicina>::operator-=(T clan) {
+	int i = 0;
+	for (i = 0; i < _trenutno; i++)
+		if (_niz[i] == clan)
+			break;
+	if (i < _trenutno) {
+		_trenutno = _trenutno - 1;
+		for (int j = i; j < _trenutno; j++)
+		{
+			_niz[j] = _niz[j + 1];
+		}
+		return true;
+	}
+	return false;
+}
+template<class T, int velicina>
+FITArray<T, velicina> FITArray<T, velicina>::operator()(int od, int doo) {
+	if (_trenutno < doo)
+		doo = _trenutno;
+	FITArray<T, velicina> n;
+	for (int i = od; i <= doo; i++)
+			n += _niz[i];
+
+	return n;
+}
+class PolozeniPredmet {
+	char * _naziv;
+	int _ocjena;
+	Datum _datumPolaganja;
+public:
+	int Ocjena() { return _ocjena; }
+	PolozeniPredmet():_datumPolaganja(1,1,2017) {
+		_naziv = nullptr;
+		_ocjena = 0;
+	}
+	PolozeniPredmet(PolozeniPredmet &p):_datumPolaganja(p._datumPolaganja) {
+
+		if (p._naziv != nullptr)
+		{
+			_naziv = new char[strlen(p._naziv) + 1];
+			strcpy_s(_naziv, strlen(p._naziv) + 1, p._naziv);
+		}
+		else
+			p._naziv = nullptr;
+		_ocjena = p._ocjena;
+	}
+	
+	PolozeniPredmet(Datum & d, const char*Naziv, int ocjena):_datumPolaganja(d) {
+		_naziv = new char[strlen(Naziv) + 1];
+		strcpy_s(_naziv, strlen(Naziv) + 1, Naziv);
+		_ocjena = ocjena;
+	}
+	~PolozeniPredmet() { delete[] _naziv; _naziv = nullptr; }
+	friend ostream & operator<<(ostream & COUT, const PolozeniPredmet & obj) {
+		COUT << obj._naziv << "(" << obj._ocjena << ")" << obj._datumPolaganja << endl;
+		return COUT;
+	}
+	bool operator==(PolozeniPredmet& p) { return strcmp(p._naziv, _naziv) == 0 && p._datumPolaganja==_datumPolaganja; }
+	void operator=(PolozeniPredmet &p) {
+		delete[]_naziv;
+		if (p._naziv != nullptr)
+		{
+			_naziv = new char[strlen(p._naziv) + 1];
+			strcpy_s(_naziv, strlen(p._naziv) + 1, p._naziv);
+		}
+		else
+			p._naziv = nullptr;
+
+		_ocjena = p._ocjena;
+		_datumPolaganja = p._datumPolaganja;
+	}
+};
+class Student {
+	static int _indeksCounter; //sluzi za odredjivanje narednog broja indeksa koji ce biti dodijeljen studentu, pocevsi od 160000
+	const int _indeks;
+	char * _imePrezime;
+	FITArray<PolozeniPredmet, 40> _polozeniPredmeti;
+public:
+	Student(const char*ImePrezime) :_indeks(++_indeksCounter), _polozeniPredmeti(false) {
+		_imePrezime = new char[strlen(ImePrezime) + 1];
+		strcpy_s(_imePrezime, strlen(ImePrezime) + 1, ImePrezime);
+	}
+	~Student() {
+		delete[] _imePrezime; _imePrezime = nullptr;
+	}
+	friend ostream & operator<<(ostream & COUT, const Student & obj) {
+		COUT << obj._indeks << " " << obj._imePrezime << endl << obj._polozeniPredmeti;
+		return COUT;
+	}
+	bool DodajPredmet(PolozeniPredmet& p) {
+		return _polozeniPredmeti += p;
+	}
+	int GetProsjek() {
+		int suma = 0;
+		for (int i = 0; i < _polozeniPredmeti.GetTrenutno(); i++)
+		{
+			suma += _polozeniPredmeti[i].Ocjena();
+		}
+		return suma / _polozeniPredmeti.GetTrenutno();
+	}
+	void operator=(Student &s1) {
+		delete[]_imePrezime;
+		_imePrezime = new char[strlen(s1._imePrezime) + 1];
+		strcpy_s(_imePrezime, strlen(s1._imePrezime) + 1, s1._imePrezime);
+		_polozeniPredmeti = s1._polozeniPredmeti;
+	}
+};
+int Student::_indeksCounter = 160000;
+void main() {
+	const int max = 20;
+	Datum jucer(20, 11, 2017), danas(21, 11, 2017), sutra(22, 11, 2017);
+	cout << jucer << danas << sutra << endl;
+	jucer = danas;
+	cout << jucer << danas << sutra << endl;
+	//parametar tipa bool odredjuje da li je u nizu dozvoljeno dupliciranje elemenata
+	FITArray<int, max> nizIntegera(false);
+	for (size_t i = 0; i < max - 1; i++)
+		nizIntegera += i;//dodaje novog clana niza
+	if (!(nizIntegera += 6))//pokusavamo dodati dupli clan niza
+	cout << "Element nije dodan u niz" << endl;
+	cout << crt << nizIntegera << crt; //ispisuje sve clanove niza
+	nizIntegera -= 9; //uklanja clan niza sa vrijednoscu 9
+	nizIntegera -= 17;
+	FITArray<int, max> noviNizIntegera(nizIntegera);
+	cout << crt << noviNizIntegera << crt;
+	///*parametri odredjuju lokacije (indekse u nizu)
+	//elemenata OD - DO koje je potrebno vratiti. u
+	//slucaju da u nizu ne postoji trazeni broj elemenata funkcija treba da vrati sve element od
+	//lokacije OD pa do posljednje dostupnog elementa */
+	cout << "Clanovi niza od lokacije 2 do lokacije 5 su -> " << noviNizIntegera(2, 5) <<crt;
+	Student adel("Adel Handzic"), jasmin("Jasmin Azemovic");
+	PolozeniPredmet prII(jucer, "PRII", 8), prIII(sutra, "PRIII", 7);
+	adel.DodajPredmet(prII);
+	adel.DodajPredmet(prIII);
+	cout << adel << endl;
+	////vraca prosjecnu ocjenu studenta
+	cout << "Prosjecna ocjena -> " << adel.GetProsjek() << crt;
+	jasmin = adel;
+	cout << jasmin << endl;
+	cout << "Prosjecna ocjena -> " << jasmin.GetProsjek() << crt;
+	system("pause>0");
+}
